@@ -40,7 +40,7 @@ class DefaultController extends Controller
             ->fetch();
 
         // Parse Feed
-        $parser = $this->get('tradetracker.xml.parser')
+        $products = $this->get('tradetracker.xml.parser')
             ->setXML($xml)
             ->setAttributes([
                 'productID',
@@ -53,5 +53,7 @@ class DefaultController extends Controller
                 'imageURL'
             ])
             ->parse();
+
+        dump($products, $xml);exit;
     }
 }

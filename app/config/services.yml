@@ -54,11 +54,7 @@ services:
       class: Symfony\Component\DomCrawler\Crawler
       public: false
 
-    tradetracker.xml.field.mapper:
-      class: AppBundle\Service\TradeTracker\FieldMapper
-      public: false
-
     tradetracker.xml.parser:
       class: AppBundle\Service\TradeTracker\XMLParser
-      arguments: ['@dom.crawler', '@tradetracker.xml.field.mapper']
+      arguments: ['@dom.crawler']
       public: true

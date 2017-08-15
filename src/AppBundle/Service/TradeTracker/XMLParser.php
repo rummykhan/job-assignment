@@ -20,22 +20,13 @@ class XMLParser
      */
     private $crawler;
 
-    /**
-     * @var MapperInterface
-     */
-    private $mapper;
-
-    private $xml;
-
-    public function __construct(Crawler $crawler, MapperInterface $mapper)
+    public function __construct(Crawler $crawler)
     {
         $this->crawler = $crawler;
-        $this->mapper = $mapper;
     }
 
     public function setXML($xml)
     {
-        $this->xml = $xml;
         $this->crawler->addXmlContent($xml);
         return $this;
     }
@@ -49,9 +40,10 @@ class XMLParser
     public function parse()
     {
         $xmlProducts = $this->getProducts();
+
         $products = [];
 
-        foreach ($xmlProducts as $xmlProduct) {
+        foreach ($xmlProducts as $index => $xmlProduct) {
             $products[] = $this->parseNode($xmlProduct);
         }
 
@@ -61,22 +53,15 @@ class XMLParser
 
     private function getProducts()
     {
-        return $this->crawler->filterXPath('products');
+        return $this->crawler->filterXPath('products/*');
     }
 
     private function parseNode(DOMNode $xmlProduct)
     {
-        $array = (new DomNodeParser())->parse($xmlProduct);
-        dump($array, $this->xml);exit;
+        $results = [];
 
-        $product = new Product();
+        (new DomNodeParser())->parse($xmlProduct, $results);
 
-        foreach ($this->attributes as $attribute) {
-            if ($parser = $this->mapper->map($attribute)) {
-                $product->setAttribute($attribute, $parser->getValue($attribute, $xmlProduct));
-            }
-        }
-
-        return $product;
+        return $results;
     }
 }

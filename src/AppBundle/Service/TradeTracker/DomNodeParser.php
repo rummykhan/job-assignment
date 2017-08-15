@@ -5,62 +5,58 @@ namespace AppBundle\Service\TradeTracker;
 
 class DomNodeParser
 {
-    /**
-     * @param $node
-     * @param array $arr
-     * @return array
-     *
-     *
-     *
-     */
-    public function parse($node, $arr = [])
+
+    public function parse($node, &$results = [])
     {
-        $results = $arr;
+        foreach ($node->childNodes as $node) {
 
-        if ($node->childNodes) {
+            // for DOM Constants
+            // @link http://php.net/manual/en/dom.constants.php
+            if ($node->nodeType === XML_TEXT_NODE) {
+                // it is probably \n type of text
+                continue;
+            }
 
+            $childNodes = $node->childNodes;
+            $tagName = $node->tagName;
 
-            foreach ($node->childNodes as $node) {
+            if (!$childNodes) {
+                continue;
+            }
 
-                if ($node->nodeType === XML_TEXT_NODE) {
-                    // it is probably \n type of text
-                    continue;
-                }
+            if ($childNodes->length === 0) {
+                continue;
+            }
 
-                if ($node->nodeType === XML_ELEMENT_NODE) {
+            if ($childNodes->length > 1) {
+                static::parse($node, $results);
+            }
 
-                    if ($node->childNodes && $node->childNodes->length === 1) {
+            // nodeText will be DOMText
+            // See: http://php.net/manual/en/class.domtext.php
+            $nodeText = $childNodes->item(0);
 
-                        echo "if: " . $node->tagName;
-                        echo '<br>';
+            if (isset($results[$tagName]) && !is_array($results[$tagName])) {
+                $results[$tagName] = [$results[$tagName], $nodeText->data];
+            } elseif (isset($results[$tagName]) && is_array($results[$tagName])) {
+                $results[$tagName][] = $nodeText->data;
+            } else {
+                $results[$tagName] = $nodeText->data;
+            }
 
-                        // nodeText will be DOMText
-                        // See: http://php.net/manual/en/class.domtext.php
-                        $results[$node->tagName] = $node->childNodes->item(0)->data;
-
-                        if ($node->attributes && $node->attributes->length > 0) {
-                            $results["@{$node->tagName}"] = self::getAttributes($node);
-                        }
-                    } else {
-                        echo "else:" . $node->tagName;
-                        echo '<br>';
-                        self::parse($node, $results);
-                    }
-                }
+            if ($node->attributes && $node->attributes->length > 0) {
+                $results["{$tagName}.attributes"] = static::getAttributes($node);
             }
         }
-
-        return $results;
     }
 
-    private
-    function getAttributes($node)
+    private function getAttributes($node)
     {
         $attributes = [];
         foreach ($node->attributes as $key => $attribute) {
+
             // Here Attribute is DOMAttr
             // See: http://php.net/manual/en/class.domattr.php
-
             $attributes[$attribute->nodeName] = $attribute->value;
         }
         return $attributes;
