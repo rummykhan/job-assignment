@@ -11,3 +11,10 @@ try {
 
   require('bootstrap-sass');
 } catch (e) {}
+
+/**
+ * We'll load the axios HTTP library which allows us to easily issue requests
+ * to our Symfony back-end.
+ */
+
+window.axios = require('axios');

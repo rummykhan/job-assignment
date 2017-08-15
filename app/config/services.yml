@@ -33,3 +33,32 @@ services:
     # AppBundle\Service\ExampleService:
     #     arguments:
     #         $someArgument: 'some_value'
+    tradetracker.url.decorator:
+      class: AppBundle\Service\URLDecoratorService
+      public: true
+
+    tradetracker.json.parser:
+      class: AppBundle\Service\JSONRequestParserService
+      public: true
+
+    guzzle.client:
+      class: GuzzleHttp\Client
+      public: false
+
+    tradetracker.web.client.service:
+      class: AppBundle\Service\WebClientService
+      arguments: ['@guzzle.client']
+      public: true
+
+    dom.crawler:
+      class: Symfony\Component\DomCrawler\Crawler
+      public: false
+
+    tradetracker.xml.field.mapper:
+      class: AppBundle\Service\TradeTracker\FieldMapper
+      public: false
+
+    tradetracker.xml.parser:
+      class: AppBundle\Service\TradeTracker\XMLParser
+      arguments: ['@dom.crawler', '@tradetracker.xml.field.mapper']
+      public: true
