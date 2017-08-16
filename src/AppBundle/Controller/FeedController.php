@@ -3,6 +3,8 @@
 namespace AppBundle\Controller;
 
 
+use AppBundle\Infrastructure\JsonResponseHandler;
+use AppBundle\Infrastructure\JsonResponseInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -11,8 +13,13 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Url;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
-class FeedController extends Controller
+class FeedController extends Controller implements JsonResponseInterface
 {
+    /**
+     * A Trait that can be used to centralize JSON response.
+     */
+    use JsonResponseHandler;
+
     protected $desiredAttributes = [
         'productID',
         'name',
@@ -114,26 +121,5 @@ class FeedController extends Controller
         }
 
         return $this->sendJsonResponse(false, 422, $errors);
-    }
-
-    /**
-     * To have consistency in the app, wrote a wrapper on $this->json()
-     *
-     * @param bool $success
-     * @param int $status
-     * @param array $data
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     */
-    protected function sendJsonResponse($success = true, $status = 200, array $data = [])
-    {
-        $response = [
-            'success' => $success
-        ];
-
-        if (count($data)) {
-            $response['data'] = $data;
-        }
-
-        return $this->json($response, $status);
     }
 }
