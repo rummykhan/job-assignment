@@ -62,3 +62,6 @@ services:
       class: AppBundle\Service\TradeTracker\FeedParser
       arguments: ['@dom.crawler','@tradetracker.xml.parser']
       public: true
+
+    logout_listener:
+      class: AppBundle\Listener\LogoutListener

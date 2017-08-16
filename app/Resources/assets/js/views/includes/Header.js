@@ -30,7 +30,7 @@ class Header extends Component {
                                     User <span className="caret"/>
                                 </a>
                                 <ul className="dropdown-menu">
-                                    <li><Link to="/logout">Logout</Link></li>
+                                    <li><a href="/logout">Logout</a></li>
                                 </ul>
                             </li>
                         </ul>

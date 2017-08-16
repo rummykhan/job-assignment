@@ -26,6 +26,12 @@ security:
 
             # https://symfony.com/doc/current/security/form_login_setup.html
             #form_login: ~
+            logout:
+                path:                 /logout
+                target:               /
+                invalidate_session:   true
+                success_handler:      logout_listener
+
     access_control:
         - { path: ^/, roles: ROLE_USER }
 

@@ -26230,8 +26230,8 @@ var Header = function (_Component) {
                                         'li',
                                         null,
                                         _react2.default.createElement(
-                                            _reactRouterDom.Link,
-                                            { to: '/logout' },
+                                            'a',
+                                            { href: '/logout' },
                                             'Logout'
                                         )
                                     )
