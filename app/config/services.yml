@@ -33,20 +33,20 @@ services:
     # AppBundle\Service\ExampleService:
     #     arguments:
     #         $someArgument: 'some_value'
-    tradetracker.url.decorator:
-      class: AppBundle\Service\URLDecoratorService
+    url.decorator:
+      class: AppBundle\Service\URLDecorator
       public: true
 
-    tradetracker.json.parser:
-      class: AppBundle\Service\JSONRequestParserService
+    json.parser:
+      class: AppBundle\Service\JSONParser
       public: true
 
     guzzle.client:
       class: GuzzleHttp\Client
       public: false
 
-    tradetracker.web.client.service:
-      class: AppBundle\Service\WebClientService
+    web.client:
+      class: AppBundle\Service\WebClient
       arguments: ['@guzzle.client']
       public: true
 
@@ -56,5 +56,9 @@ services:
 
     tradetracker.xml.parser:
       class: AppBundle\Service\TradeTracker\XMLParser
-      arguments: ['@dom.crawler']
+      public: true
+
+    tradetracker.feed.parser:
+      class: AppBundle\Service\TradeTracker\FeedParser
+      arguments: ['@dom.crawler','@tradetracker.xml.parser']
       public: true

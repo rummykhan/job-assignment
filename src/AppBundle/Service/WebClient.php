@@ -4,7 +4,13 @@ namespace AppBundle\Service;
 
 use GuzzleHttp\ClientInterface;
 
-class WebClientService
+/**
+ * This is just a wrapper around GuzzleHttp/Client to follow SOA approach and write testable code.
+ *
+ * Class WebClient
+ * @package AppBundle\Service
+ */
+class WebClient
 {
     /**
      * @var ClientInterface $client

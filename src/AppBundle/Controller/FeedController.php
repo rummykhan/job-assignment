@@ -6,22 +6,21 @@ namespace AppBundle\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Url;
-use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 class FeedController extends Controller
 {
-    protected $attributes = [
+    protected $desiredAttributes = [
         'productID',
         'name',
         'description',
         'price',
         'currency',
         'categories',
+        'category',
         'productURL',
         'imageURL'
     ];
@@ -33,7 +32,7 @@ class FeedController extends Controller
     public function feedAction(Request $request)
     {
         // Get JSON content from the request.
-        $postData = $this->get('tradetracker.json.parser')
+        $postData = $this->get('json.parser')
             ->setRequest($request)
             ->getContent();
 
@@ -52,45 +51,45 @@ class FeedController extends Controller
         }
 
         // parse URL (Add Skip and Limit based on Page)
-        $parsedUrl = $this->get('tradetracker.url.decorator')
+        $parsedUrl = $this->get('url.decorator')
             ->setPostData($postData)
             ->decorate();
 
-        // get Configured cache service.
+        // get cache service.
         $cache = $this->get('doctrine_cache.providers.tradetracker_cache');
 
-        // If user enabled Force refresh don't get the results from cache.
+        // If user has enabled Force refresh then don't get the results from cache.
         // if results are already cached then get from the cache.
         if (!$forceRefresh && $cache->contains(md5($parsedUrl))) {
-            $results = $this->get(md5($parsedUrl));
+            $results = $cache->fetch(md5($parsedUrl));
 
             return $this->sendJsonResponse(true, 200, $results);
         }
 
         // Request Feed
-        $xml = $this->get('tradetracker.web.client.service')
+        $xml = $this->get('web.client')
             ->setMethod('GET')
             ->setUrl($parsedUrl)
             ->fetch();
 
         // Parse Feed
-        $parser = $this->get('tradetracker.xml.parser')
+        $feed = $this->get('tradetracker.feed.parser')
             ->setXML($xml)
-            ->setAttributes($this->attributes)
+            ->setDesiredAttributes($this->desiredAttributes)
             ->parse();
 
-        /*$crawler = (new Crawler($xml))->filterXPath('products')->children();
-        foreach ($crawler as $item) {
-            dump($item->childNodes[0], $item->childNodes[1]);
-        }
-        exit;*/
-
-        // Create Paginator
         // Cache feed on key = md5(url)
+        $cache->save(md5($parsedUrl), $feed);
 
-        // Send Response
+        return $this->sendJsonResponse(true, 200, $feed);
     }
 
+    /**
+     * Validate incoming URL.
+     *
+     * @param $url
+     * @return ConstraintViolationListInterface
+     */
     protected function validate($url)
     {
         $validator = $this->get('validator');
@@ -101,6 +100,12 @@ class FeedController extends Controller
         ]);
     }
 
+    /**
+     * Send validation failed response.
+     *
+     * @param ConstraintViolationListInterface $violations
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     protected function sendValidationFailedResponse(ConstraintViolationListInterface $violations)
     {
         $errors = [];
@@ -111,6 +116,14 @@ class FeedController extends Controller
         return $this->sendJsonResponse(false, 422, $errors);
     }
 
+    /**
+     * To have consistency in the app, wrote a wrapper on $this->json()
+     *
+     * @param bool $success
+     * @param int $status
+     * @param array $data
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     */
     protected function sendJsonResponse($success = true, $status = 200, array $data = [])
     {
         $response = [

@@ -25699,6 +25699,18 @@ var _react2 = _interopRequireDefault(_react);
 
 var _components = __webpack_require__(246);
 
+var _ProductRow = __webpack_require__(283);
+
+var _ProductRow2 = _interopRequireDefault(_ProductRow);
+
+var _Product = __webpack_require__(285);
+
+var _Product2 = _interopRequireDefault(_Product);
+
+var _ProductModal = __webpack_require__(286);
+
+var _ProductModal2 = _interopRequireDefault(_ProductModal);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -25719,20 +25731,21 @@ var Home = function (_Component) {
 
         _this.state = {
             form: {
-                url: 'http://pf.tradetracker.net/?aid=1&type=xml&encoding=utf-8&fid=251713&categoryType=2&additionalType=2'
+                url: 'http://pf.tradetracker.net/?aid=1&type=xml&encoding=utf-8&fid=251713&categoryType=2&additionalType=2',
+                limit: 10,
+                forceRefresh: false
             },
-            paginator: {
-                hasMore: true,
-                data: []
-            },
+            data: [],
             meta: {
                 loading: false
             },
-            validationErrors: []
+            validationErrors: [],
+            selectedProduct: new _Product2.default()
         };
 
         _this.onChange = _this.onChange.bind(_this);
         _this.validateAndSubmit = _this.validateAndSubmit.bind(_this);
+        _this.showProductDetail = _this.showProductDetail.bind(_this);
         return _this;
     }
 
@@ -25741,7 +25754,13 @@ var Home = function (_Component) {
         value: function onChange(e) {
             var form = this.state.form;
 
-            form[e.target.name] = e.target.value;
+            if (e.target.name === 'limit') {
+                form[e.target.name] = parseInt(e.target.value);
+            } else if (e.target.name === 'forceRefresh') {
+                form[e.target.name] = e.target.checked;
+            } else {
+                form[e.target.name] = e.target.value;
+            }
             this.setState({ form: form });
         }
     }, {
@@ -25792,22 +25811,34 @@ var Home = function (_Component) {
         value: function submit() {
             var _this2 = this;
 
+            var page = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+
             this.startRequest();
 
-            var form = this.state.form;
-
+            var form = JSON.parse(JSON.stringify(this.state.form));
+            form.page = page;
 
             axios.post('/feed', form).then(function (response) {
-                console.log('response:', response.data);
+
+                _this2.updateResponse(response.data.data);
 
                 _this2.requestComplete();
             }).catch(function (error) {
-                error.response.data.data.forEach(function (error) {
-                    _this2.addValidationError(error);
-                });
+                var response = error.response;
+
+                if (!!response && !!response.data) {
+                    response.data.data.forEach(function (error) {
+                        _this2.addValidationError(error);
+                    });
+                }
 
                 _this2.requestComplete();
             });
+        }
+    }, {
+        key: 'updateResponse',
+        value: function updateResponse(data) {
+            this.setState({ data: data });
         }
     }, {
         key: 'startRequest',
@@ -25826,8 +25857,8 @@ var Home = function (_Component) {
             this.setState({ meta: meta });
         }
     }, {
-        key: 'renderInputBox',
-        value: function renderInputBox() {
+        key: 'renderURLInputBox',
+        value: function renderURLInputBox() {
             var form = this.state.form;
 
             return _react2.default.createElement(
@@ -25841,6 +25872,55 @@ var Home = function (_Component) {
                         isHidden: this.state.validationErrors.length === 0 },
                     this.state.validationErrors.length > 0 ? this.state.validationErrors[0] : ''
                 )
+            );
+        }
+    }, {
+        key: 'renderLimitInputBox',
+        value: function renderLimitInputBox() {
+            var form = this.state.form;
+
+            return _react2.default.createElement(
+                'div',
+                { className: 'form-group' },
+                _react2.default.createElement(_components.Label, { htmlFor: 'limit', label: 'Limit Feed by' }),
+                _react2.default.createElement(
+                    'select',
+                    { name: 'limit', className: 'form-control', value: form.limit, onChange: this.onChange },
+                    _react2.default.createElement(
+                        'option',
+                        { value: '10' },
+                        '10'
+                    ),
+                    _react2.default.createElement(
+                        'option',
+                        { value: '20' },
+                        '20'
+                    ),
+                    _react2.default.createElement(
+                        'option',
+                        { value: '50' },
+                        '50'
+                    ),
+                    _react2.default.createElement(
+                        'option',
+                        { value: '100' },
+                        '100'
+                    )
+                )
+            );
+        }
+    }, {
+        key: 'renderForceRefreshBox',
+        value: function renderForceRefreshBox() {
+            var form = this.state.form;
+
+            return _react2.default.createElement(
+                'div',
+                { className: 'form-group' },
+                _react2.default.createElement(_components.Label, { htmlFor: 'limit', label: 'Don\'t use Cache' }),
+                ' ',
+                _react2.default.createElement('br', null),
+                _react2.default.createElement(_components.Input, { type: 'checkbox', name: 'forceRefresh', value: form.forceRefresh, onChange: this.onChange })
             );
         }
     }, {
@@ -25865,8 +25945,101 @@ var Home = function (_Component) {
             );
         }
     }, {
+        key: 'renderTableHead',
+        value: function renderTableHead() {
+            return _react2.default.createElement(
+                'thead',
+                null,
+                _react2.default.createElement(
+                    'tr',
+                    null,
+                    _react2.default.createElement(
+                        'th',
+                        null,
+                        'Product ID'
+                    ),
+                    _react2.default.createElement(
+                        'th',
+                        null,
+                        'Name'
+                    ),
+                    _react2.default.createElement(
+                        'th',
+                        null,
+                        'Description'
+                    ),
+                    _react2.default.createElement(
+                        'th',
+                        null,
+                        'Price'
+                    ),
+                    _react2.default.createElement(
+                        'th',
+                        null,
+                        'Actions'
+                    )
+                )
+            );
+        }
+    }, {
+        key: 'showProductDetail',
+        value: function showProductDetail(e, selectedProduct) {
+            e.preventDefault();
+            this.setState({ selectedProduct: selectedProduct });
+
+            $('#product-modal').modal();
+        }
+    }, {
+        key: 'renderTableBody',
+        value: function renderTableBody() {
+            var _this3 = this;
+
+            var data = this.state.data;
+
+
+            if (data.length === 0) {
+                return _react2.default.createElement(
+                    'tbody',
+                    null,
+                    _react2.default.createElement(
+                        'tr',
+                        null,
+                        _react2.default.createElement(
+                            'td',
+                            { colSpan: 4 },
+                            'Click Submit to Load Data!'
+                        )
+                    )
+                );
+            }
+
+            return _react2.default.createElement(
+                'tbody',
+                null,
+                data.map(function (product, index) {
+                    return _react2.default.createElement(_ProductRow2.default, {
+                        key: product.productID,
+                        product: new _Product2.default(product),
+                        showProductDetail: _this3.showProductDetail });
+                })
+            );
+        }
+    }, {
         key: 'renderResultBox',
-        value: function renderResultBox() {}
+        value: function renderResultBox() {
+
+            return _react2.default.createElement(
+                'table',
+                { className: 'table table-striped table-responsive' },
+                this.renderTableHead(),
+                this.renderTableBody()
+            );
+        }
+    }, {
+        key: 'renderProductModal',
+        value: function renderProductModal() {
+            return _react2.default.createElement(_ProductModal2.default, { product: this.state.selectedProduct });
+        }
     }, {
         key: 'render',
         value: function render() {
@@ -25887,25 +26060,12 @@ var Home = function (_Component) {
                         _react2.default.createElement(
                             _components.PanelBody,
                             null,
-                            _react2.default.createElement(
-                                'div',
-                                { className: 'row' },
-                                _react2.default.createElement(
-                                    'div',
-                                    { className: 'col-md-8 col-md-offset-2' },
-                                    this.renderInputBox(),
-                                    this.renderInputButton()
-                                )
-                            ),
-                            _react2.default.createElement(
-                                'div',
-                                { className: 'row' },
-                                _react2.default.createElement(
-                                    'div',
-                                    { className: 'col-md-12' },
-                                    this.renderResultBox()
-                                )
-                            )
+                            this.renderProductModal(),
+                            this.renderURLInputBox(),
+                            this.renderLimitInputBox(),
+                            this.renderForceRefreshBox(),
+                            this.renderInputButton(),
+                            this.renderResultBox()
                         )
                     )
                 )
@@ -26043,7 +26203,7 @@ var Header = function (_Component) {
                         _react2.default.createElement(
                             _reactRouterDom.Link,
                             { className: 'navbar-brand', to: '/' },
-                            'App'
+                            'TradeTracker'
                         )
                     ),
                     _react2.default.createElement(
@@ -57925,6 +58085,374 @@ module.exports = function spread(callback) {
   };
 };
 
+
+/***/ }),
+/* 283 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(5);
+
+var _react2 = _interopRequireDefault(_react);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var ProductRow = function (_Component) {
+    _inherits(ProductRow, _Component);
+
+    function ProductRow(props) {
+        _classCallCheck(this, ProductRow);
+
+        return _possibleConstructorReturn(this, (ProductRow.__proto__ || Object.getPrototypeOf(ProductRow)).call(this, props));
+    }
+
+    _createClass(ProductRow, [{
+        key: 'renderActions',
+        value: function renderActions(product) {
+            var _this2 = this;
+
+            return _react2.default.createElement(
+                'td',
+                null,
+                _react2.default.createElement(
+                    'button',
+                    { className: 'btn btn-default btn-sm', onClick: function onClick(e) {
+                            _this2.props.showProductDetail(e, product);
+                        } },
+                    'Detail'
+                )
+            );
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var _props = this.props,
+                product = _props.product,
+                index = _props.index;
+
+
+            return _react2.default.createElement(
+                'tr',
+                null,
+                _react2.default.createElement(
+                    'td',
+                    null,
+                    product.getId()
+                ),
+                _react2.default.createElement(
+                    'td',
+                    null,
+                    product.getName(25)
+                ),
+                _react2.default.createElement(
+                    'td',
+                    null,
+                    product.getDescription(20)
+                ),
+                _react2.default.createElement(
+                    'td',
+                    null,
+                    product.getPrice() + ' ' + product.getCurrency()
+                ),
+                this.renderActions(product)
+            );
+        }
+    }]);
+
+    return ProductRow;
+}(_react.Component);
+
+exports.default = ProductRow;
+
+/***/ }),
+/* 284 */,
+/* 285 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _lodash = __webpack_require__(231);
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Product = function () {
+    function Product(data) {
+        _classCallCheck(this, Product);
+
+        this.init(data);
+    }
+
+    _createClass(Product, [{
+        key: 'init',
+        value: function init(data) {
+            _lodash2.default.assign(this, data);
+        }
+    }, {
+        key: 'getId',
+        value: function getId() {
+            return this.productID;
+        }
+    }, {
+        key: 'getName',
+        value: function getName(limit) {
+            if (!!limit) {
+                return this.name.substr(0, limit) + '...';
+            }
+
+            return this.name;
+        }
+    }, {
+        key: 'getDescription',
+        value: function getDescription(limit) {
+
+            if (!!limit) {
+                return this.description.substr(0, limit) + '...';
+            }
+
+            return this.description;
+        }
+    }, {
+        key: 'getPrice',
+        value: function getPrice() {
+            return this.price;
+        }
+    }, {
+        key: 'getCurrency',
+        value: function getCurrency() {
+            if (!!this['attributes']) {
+                return this['attributes']['price.0']['currency'];
+            }
+
+            return 0;
+        }
+    }, {
+        key: 'getImageUrl',
+        value: function getImageUrl() {
+            return this.imageURL;
+        }
+    }, {
+        key: 'getProductURL',
+        value: function getProductURL() {
+            return this.productURL;
+        }
+    }, {
+        key: 'getCategory',
+        value: function getCategory() {
+            return this.category;
+        }
+    }]);
+
+    return Product;
+}();
+
+exports.default = Product;
+
+/***/ }),
+/* 286 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(5);
+
+var _react2 = _interopRequireDefault(_react);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var ProductModal = function (_Component) {
+    _inherits(ProductModal, _Component);
+
+    function ProductModal(props) {
+        _classCallCheck(this, ProductModal);
+
+        return _possibleConstructorReturn(this, (ProductModal.__proto__ || Object.getPrototypeOf(ProductModal)).call(this, props));
+    }
+
+    _createClass(ProductModal, [{
+        key: "render",
+        value: function render() {
+            var product = this.props.product;
+
+            return _react2.default.createElement(
+                "div",
+                { className: "modal fade", id: "product-modal", role: "dialog", "aria-labelledby": "myModalLabel" },
+                _react2.default.createElement(
+                    "div",
+                    { className: "modal-dialog", role: "document" },
+                    _react2.default.createElement(
+                        "div",
+                        { className: "modal-content" },
+                        _react2.default.createElement(
+                            "div",
+                            { className: "modal-header" },
+                            _react2.default.createElement(
+                                "button",
+                                { type: "button", className: "close", "data-dismiss": "modal", "aria-label": "Close" },
+                                _react2.default.createElement(
+                                    "span",
+                                    {
+                                        "aria-hidden": "true" },
+                                    "\xD7"
+                                )
+                            ),
+                            _react2.default.createElement(
+                                "strong",
+                                { className: "modal-title", id: "myModalLabel" },
+                                product.getName()
+                            )
+                        ),
+                        _react2.default.createElement(
+                            "div",
+                            { className: "modal-body" },
+                            _react2.default.createElement(
+                                "div",
+                                { className: "row" },
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col-md-4" },
+                                    _react2.default.createElement("img", { src: product.getImageUrl(), className: "thumbnail img-responsive", alt: "" })
+                                ),
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col-md-8" },
+                                    _react2.default.createElement(
+                                        "table",
+                                        { className: "table table-striped" },
+                                        _react2.default.createElement(
+                                            "tbody",
+                                            null,
+                                            _react2.default.createElement(
+                                                "tr",
+                                                null,
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    "ID"
+                                                ),
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    product.getId()
+                                                )
+                                            ),
+                                            _react2.default.createElement(
+                                                "tr",
+                                                null,
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    "Name"
+                                                ),
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    product.getName()
+                                                )
+                                            ),
+                                            _react2.default.createElement(
+                                                "tr",
+                                                null,
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    "Price"
+                                                ),
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    product.getPrice() + ' ' + product.getCurrency()
+                                                )
+                                            ),
+                                            _react2.default.createElement(
+                                                "tr",
+                                                null,
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    "Categories"
+                                                ),
+                                                _react2.default.createElement(
+                                                    "td",
+                                                    null,
+                                                    product.getCategory()
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            _react2.default.createElement(
+                                "div",
+                                { className: "row" },
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col-md-12" },
+                                    _react2.default.createElement(
+                                        "strong",
+                                        null,
+                                        "Description:"
+                                    ),
+                                    product.getDescription()
+                                )
+                            )
+                        ),
+                        _react2.default.createElement(
+                            "div",
+                            { className: "modal-footer" },
+                            _react2.default.createElement(
+                                "a",
+                                { href: product.getProductURL(), target: "_blank", className: "btn btn-primary btn-sm" },
+                                "View Product Detail"
+                            )
+                        )
+                    )
+                )
+            );
+        }
+    }]);
+
+    return ProductModal;
+}(_react.Component);
+
+exports.default = ProductModal;
 
 /***/ })
 /******/ ]);

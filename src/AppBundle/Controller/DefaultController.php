@@ -29,31 +29,38 @@ class DefaultController extends Controller
         ];
 
         // parse URL (Add Skip and Limit based on Page)
-        $parsedUrl = $this->get('tradetracker.url.decorator')
+        $parsedUrl = $this->get('url.decorator')
             ->setPostData($postData)
             ->decorate();
 
         // Request Feed
-        $xml = $this->get('tradetracker.web.client.service')
+        $xml = $this->get('web.client')
             ->setMethod('GET')
             ->setUrl($parsedUrl)
             ->fetch();
 
         // Parse Feed
-        $products = $this->get('tradetracker.xml.parser')
+        $products = $this->get('tradetracker.feed.parser')
             ->setXML($xml)
-            ->setAttributes([
+            ->setDesiredAttributes([
                 'productID',
                 'name',
                 'description',
                 'price',
                 'currency',
-                'categories',
+                'categories', // root
+                'category', // child
                 'productURL',
                 'imageURL'
             ])
             ->parse();
 
-        dump($products, $xml);exit;
+        $paginator = $this->get('tradetracker.paginator')
+            ->setCurrentPage(1)
+            ->setData($products)
+            ->setUrl($parsedUrl)
+            ->getPaginator();
+
+        return $this->render("default/index.html.twig");
     }
 }

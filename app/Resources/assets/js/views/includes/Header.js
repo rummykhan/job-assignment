@@ -16,7 +16,7 @@ class Header extends Component {
                             <span className="icon-bar"/>
                             <span className="icon-bar"/>
                         </button>
-                        <Link className="navbar-brand" to="/">App</Link>
+                        <Link className="navbar-brand" to="/">TradeTracker</Link>
                     </div>
 
 

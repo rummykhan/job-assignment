@@ -2,6 +2,9 @@ import React, {Component} from 'react';
 import {
     Label, Input, HelpBlock, Button, Panel, PanelHeading, PanelBody
 } from '../../components';
+import ProductRow from './ProductRow';
+import Product from '../../models/Product';
+import ProductModal from './ProductModal';
 
 const validUrl = require('valid-url');
 
@@ -13,24 +16,31 @@ class Home extends Component {
         this.state = {
             form: {
                 url: 'http://pf.tradetracker.net/?aid=1&type=xml&encoding=utf-8&fid=251713&categoryType=2&additionalType=2',
+                limit: 10,
+                forceRefresh: false
             },
-            paginator: {
-                hasMore: true,
-                data: [],
-            },
+            data: [],
             meta: {
                 loading: false
             },
             validationErrors: [],
+            selectedProduct: new Product()
         };
 
         this.onChange = this.onChange.bind(this);
         this.validateAndSubmit = this.validateAndSubmit.bind(this);
+        this.showProductDetail = this.showProductDetail.bind(this);
     }
 
     onChange(e) {
         const {form} = this.state;
-        form[e.target.name] = e.target.value;
+        if (e.target.name === 'limit') {
+            form[e.target.name] = parseInt(e.target.value);
+        } else if (e.target.name === 'forceRefresh') {
+            form[e.target.name] = e.target.checked;
+        } else {
+            form[e.target.name] = e.target.value;
+        }
         this.setState({form});
     }
 
@@ -70,24 +80,33 @@ class Home extends Component {
         this.setState({validationErrors});
     }
 
-    submit() {
+    submit(page = 1) {
         this.startRequest();
 
-        const {form} = this.state;
+        const form = JSON.parse(JSON.stringify(this.state.form));
+        form.page = page;
 
         axios.post('/feed', form)
             .then(response => {
-                console.log('response:', response.data);
+
+                this.updateResponse(response.data.data);
 
                 this.requestComplete();
             })
             .catch(error => {
-                error.response.data.data.forEach((error) => {
-                    this.addValidationError(error);
-                });
+                const {response} = error;
+                if (!!response && !!response.data) {
+                    response.data.data.forEach((error) => {
+                        this.addValidationError(error);
+                    });
+                }
 
                 this.requestComplete();
             });
+    }
+
+    updateResponse(data) {
+        this.setState({data});
     }
 
     startRequest() {
@@ -102,7 +121,7 @@ class Home extends Component {
         this.setState({meta});
     }
 
-    renderInputBox() {
+    renderURLInputBox() {
         const {form} = this.state;
         return (
             <div className={'form-group ' + (this.state.validationErrors.length > 0 ? 'has-error' : '')}>
@@ -110,6 +129,31 @@ class Home extends Component {
                 <Input type="text" className="form-control" name="url" value={form.url} onChange={this.onChange}/>
                 <HelpBlock
                     isHidden={this.state.validationErrors.length === 0}>{this.state.validationErrors.length > 0 ? this.state.validationErrors[0] : ''}</HelpBlock>
+            </div>
+        )
+    }
+
+    renderLimitInputBox() {
+        const {form} = this.state;
+        return (
+            <div className="form-group">
+                <Label htmlFor="limit" label="Limit Feed by"/>
+                <select name="limit" className="form-control" value={form.limit} onChange={this.onChange}>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        )
+    }
+
+    renderForceRefreshBox() {
+        const {form} = this.state;
+        return (
+            <div className="form-group">
+                <Label htmlFor="limit" label="Don't use Cache"/> <br/>
+                <Input type="checkbox" name="forceRefresh" value={form.forceRefresh} onChange={this.onChange}/>
             </div>
         )
     }
@@ -127,8 +171,67 @@ class Home extends Component {
         )
     }
 
+    renderTableHead() {
+        return (
+            <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+        )
+    }
+
+    showProductDetail(e, selectedProduct) {
+        e.preventDefault();
+        this.setState({selectedProduct});
+
+        $('#product-modal').modal()
+    }
+
+    renderTableBody() {
+
+        const {data} = this.state;
+
+        if (data.length === 0) {
+            return (
+                <tbody>
+                <tr>
+                    <td colSpan={4}>Click Submit to Load Data!</td>
+                </tr>
+                </tbody>
+            )
+        }
+
+        return (
+            <tbody>
+            {data.map((product, index) => {
+                return <ProductRow
+                    key={product.productID}
+                    product={new Product(product)}
+                    showProductDetail={this.showProductDetail}/>
+            })}
+            </tbody>
+        )
+    }
+
     renderResultBox() {
 
+        return (
+            <table className="table table-striped table-responsive">
+                {this.renderTableHead()}
+                {this.renderTableBody()}
+            </table>
+        )
+    }
+
+    renderProductModal() {
+        return (
+            <ProductModal product={this.state.selectedProduct}/>
+        )
     }
 
     render() {
@@ -143,20 +246,17 @@ class Home extends Component {
                         </PanelHeading>
 
                         <PanelBody>
-                            <div className="row">
-                                <div className="col-md-8 col-md-offset-2">
-                                    {this.renderInputBox()}
-                                    {this.renderInputButton()}
-                                </div>
-                            </div>
 
-                            <div className="row">
-                                <div className="col-md-12">
-                                    {this.renderResultBox()}
-                                </div>
-                            </div>
+                            {this.renderProductModal()}
+
+                            {this.renderURLInputBox()}
+                            {this.renderLimitInputBox()}
+                            {this.renderForceRefreshBox()}
+                            {this.renderInputButton()}
+
+                            {this.renderResultBox()}
+
                         </PanelBody>
-
                     </Panel>
 
                 </div>

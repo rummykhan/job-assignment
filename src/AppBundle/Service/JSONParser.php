@@ -5,7 +5,13 @@ namespace AppBundle\Service;
 
 use Symfony\Component\HttpFoundation\Request;
 
-class JSONRequestParserService
+/**
+ * Purpose of this service is to get Content posted via JSON
+ *
+ * Class JSONRequestParser
+ * @package AppBundle\Service
+ */
+class JSONParser
 {
     /**
      * @var Request $request
@@ -23,6 +29,8 @@ class JSONRequestParserService
     }
 
     /**
+     * Get JSON content of the request.
+     *
      * @param bool $assoc
      * @return mixed
      */

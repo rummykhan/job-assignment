@@ -2,30 +2,33 @@
 
 namespace AppBundle\Service;
 
-
-class URLDecoratorService
+/**
+ * Purpose of this service is to carefully attach skip and limit to the URL
+ *
+ * Class URLDecorator
+ * @package AppBundle\Service
+ */
+class URLDecorator
 {
     private $postData = null;
 
     /**
      * @param string $urlKey
-     * @param string $pageKey
+     * @param string $limit
      * @param int $perPage
      * @return string
      * @throws \Exception
      */
-    public function decorate($urlKey = 'url', $pageKey = 'page', $perPage = 10)
+    public function decorate($perPage = 10, $urlKey = 'url', $limit = 'limit')
     {
         if (!$this->postData) {
             throw new \Exception("Post data not set.");
         }
 
         $url = $this->get($urlKey);
-        $page = $this->get($pageKey) ?: 1;
-        $skip = ($page - 1) * $perPage;
-        $limit = $perPage;
+        $limit = $this->get($limit) ?: 50;
 
-        return "{$url}&skip={$skip}&limit={$limit}";
+        return "{$url}&limit={$limit}";
     }
 
     /**
