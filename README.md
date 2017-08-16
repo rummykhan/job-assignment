@@ -22,7 +22,7 @@ Symfony & React
 
 #### Live Demo
 
-`http://tradetracker.rehanmanzoor.com/`
+[http://tradetracker.rehanmanzoor.com/](http://tradetracker.rehanmanzoor.com/)
 
 #### Contact
 
